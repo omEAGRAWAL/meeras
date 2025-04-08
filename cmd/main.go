@@ -17,6 +17,7 @@ func main() {
 	// Define routes
 	r.POST("/api/signup", handlers.SignupHandler)
 	r.POST("/api/login", handlers.LoginHandler)
+	r.POST("/api/registervenue", handlers.VenueHandler)
 
 	log.Println("Server running on :8080")
 	r.Run(":8080")

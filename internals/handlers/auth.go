@@ -84,16 +84,17 @@ package handlers
 
 import (
 	"context"
+	"meeras/internals/database"
+	"meeras/internals/models"
+	"net/http"
+	"time"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
-	"meeras/internals/database"
-	"meeras/internals/models"
-	"net/http"
-	"time"
 )
 
 var jwtSecret = []byte("your_secret_key")
