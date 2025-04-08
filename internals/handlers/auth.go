@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/mongo"
 	"meeras/internals/database"
 	"meeras/internals/models"
 	"net/http"
@@ -43,6 +44,26 @@ func SignupHandler(c *gin.Context) {
 	defer cancel()
 
 	collection := database.Client.Database("meeras").Collection("users")
+
+	// Check if user already exists
+	res := collection.FindOne(ctx, bson.M{"email": user.Email})
+	if res.Err() == nil { // User already exists
+		c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
+		return
+	} else if res.Err() != mongo.ErrNoDocuments { // Other DB errors
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+	res2 := collection.FindOne(ctx, bson.M{"mobile": user.Mobile})
+	if res2.Err() == nil { // User already exists
+		c.JSON(http.StatusConflict, gin.H{"error": "User already exists mobile"})
+		return
+	} else if res2.Err() != mongo.ErrNoDocuments { // Other DB errors
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+
+	// Insert new user
 	_, err = collection.InsertOne(ctx, bson.M{
 		"_id":      user.ID,
 		"name":     user.Name,
