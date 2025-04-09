@@ -105,3 +105,9 @@ func InsertNewPackageHandler(c *gin.Context) {
 
 // 	c.JSON(http.StatusOK, gin.H{"message": "Package added successfully to venue"})
 // }
+
+//getvenueByname
+//create new package
+//edit package
+//make booking
+//update booking
