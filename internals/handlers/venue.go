@@ -56,3 +56,74 @@ func VenueHandler(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Venue registered successfully"})
 }
+
+func GetAvailableSlots(c *gin.Context) {
+	venueID := c.Param("venueID")
+	date := c.Query("date") // YYYY-MM-DD format
+
+	collection := database.Client.Database("meeras").Collection("bookings")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Find existing bookings for the venue on the selected date
+	cursor, err := collection.Find(ctx, bson.M{"venue_id": venueID, "date": date})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check availability"})
+		return
+	}
+
+	// Define time slots (Example: 3-hour slots)
+	allSlots := []string{"10:00 AM - 1:00 PM", "2:00 PM - 5:00 PM", "6:00 PM - 9:00 PM"}
+	bookedSlots := make(map[string]bool)
+
+	for cursor.Next(ctx) {
+		var booking models.Booking
+		cursor.Decode(&booking)
+		bookedSlots[booking.TimeSlot] = true
+	}
+
+	// Filter available slots
+	availableSlots := []string{}
+	for _, slot := range allSlots {
+		if !bookedSlots[slot] {
+			availableSlots = append(availableSlots, slot)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"available_slots": availableSlots})
+}
+
+// BookVenue - Allows users to book a venue
+func BookVenue(c *gin.Context) {
+	var booking models.Booking
+	if err := c.ShouldBindJSON(&booking); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid booking details"})
+		return
+	}
+
+	// Ensure the slot is still available
+	collection := database.Client.Database("meeras").Collection("bookings")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	existing := collection.FindOne(ctx, bson.M{
+		"venue_id":  booking.VenueID,
+		"date":      booking.Date,
+		"time_slot": booking.TimeSlot,
+	})
+	if existing.Err() == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Time slot already booked"})
+		return
+	}
+
+	// Insert booking
+	booking.ID = primitive.NewObjectID()
+	booking.Status = "Confirmed"
+	_, err := collection.InsertOne(ctx, booking)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to book venue"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Booking successful!"})
+}

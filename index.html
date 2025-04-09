@@ -1,3 +1,67 @@
+{{/*<!DOCTYPE html>*/}}
+{{/*<html lang="en">*/}}
+{{/*<head>*/}}
+{{/*    <meta charset="UTF-8">*/}}
+{{/*    <meta name="viewport" content="width=device-width, initial-scale=1.0">*/}}
+{{/*    <title>Venue Booking</title>*/}}
+{{/*    <script>*/}}
+{{/*        async function signup(event) {*/}}
+{{/*            event.preventDefault();*/}}
+{{/*            const name = document.getElementById("name").value;*/}}
+{{/*            const email = document.getElementById("email").value;*/}}
+{{/*            const mobile = document.getElementById("mobile").value;*/}}
+{{/*            const password = document.getElementById("password").value;*/}}
+
+{{/*            const response = await fetch("http://localhost:8080/api/signup", {*/}}
+{{/*                method: "POST",*/}}
+{{/*                headers: { "Content-Type": "application/json" },*/}}
+{{/*                body: JSON.stringify({ name, email, mobile, password })*/}}
+{{/*            });*/}}
+
+{{/*            const data = await response.json();*/}}
+{{/*            alert(data.message || data.error);*/}}
+{{/*        }*/}}
+
+{{/*        async function login(event) {*/}}
+{{/*            event.preventDefault();*/}}
+{{/*            const email = document.getElementById("login-email").value;*/}}
+{{/*            const password = document.getElementById("login-password").value;*/}}
+
+{{/*            const response = await fetch("http://localhost:8080/api/login", {*/}}
+{{/*                method: "POST",*/}}
+{{/*                headers: { "Content-Type": "application/json" },*/}}
+{{/*                body: JSON.stringify({ email, password })*/}}
+{{/*            });*/}}
+
+{{/*            const data = await response.json();*/}}
+{{/*            if (data.token) {*/}}
+{{/*                localStorage.setItem("token", data.token);*/}}
+{{/*                alert("Login successful!");*/}}
+{{/*            } else {*/}}
+{{/*                alert(data.error);*/}}
+{{/*            }*/}}
+{{/*        }*/}}
+{{/*    </script>*/}}
+{{/*</head>*/}}
+{{/*<body>*/}}
+{{/*<h2>Signup</h2>*/}}
+{{/*<form onsubmit="signup(event)">*/}}
+{{/*    <input type="text" id="name" placeholder="Name" required><br>*/}}
+{{/*    <input type="email" id="email" placeholder="Email" required><br>*/}}
+{{/*    <input type="text" id="mobile" placeholder="Mobile" required><br>*/}}
+{{/*    <input type="password" id="password" placeholder="Password" required><br>*/}}
+{{/*    <button type="submit">Signup</button>*/}}
+{{/*</form>*/}}
+
+{{/*<h2>Login</h2>*/}}
+{{/*<form onsubmit="login(event)">*/}}
+{{/*    <input type="email" id="login-email" placeholder="Email" required><br>*/}}
+{{/*    <input type="password" id="login-password" placeholder="Password" required><br>*/}}
+{{/*    <button type="submit">Login</button>*/}}
+{{/*</form>*/}}
+{{/*</body>*/}}
+{{/*</html>*/}}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,59 +69,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Venue Booking</title>
     <script>
-        async function signup(event) {
-            event.preventDefault();
-            const name = document.getElementById("name").value;
-            const email = document.getElementById("email").value;
-            const mobile = document.getElementById("mobile").value;
-            const password = document.getElementById("password").value;
+        async function fetchSlots() {
+            const venueID = document.getElementById("venue").value;
+            const date = document.getElementById("date").value;
 
-            const response = await fetch("http://localhost:8080/api/signup", {
+            if (!venueID || !date) {
+                alert("Please select a venue and date.");
+                return;
+            }
+
+            const response = await fetch(`http://localhost:8080/api/availability/67f56340048092e5069f9695?date=${date}`);
+            const data = await response.json();
+
+            const slotSelect = document.getElementById("timeSlot");
+            slotSelect.innerHTML = "";
+
+            if (data.available_slots.length === 0) {
+                alert("No available slots for this date.");
+            } else {
+                data.available_slots.forEach(slot => {
+                    const option = document.createElement("option");
+                    option.value = slot;
+                    option.textContent = slot;
+                    slotSelect.appendChild(option);
+                });
+            }
+        }
+
+        async function bookVenue(event) {
+            event.preventDefault();
+            const venueID = document.getElementById("venue").value;
+            const date = document.getElementById("date").value;
+            const timeSlot = document.getElementById("timeSlot").value;
+            const userID = "USER_ID_PLACEHOLDER";  // Replace with actual user ID
+
+            const response = await fetch("http://localhost:8080/api/book", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, mobile, password })
+                body: JSON.stringify({ user_id: userID, venue_id: venueID, date, time_slot: timeSlot })
             });
 
             const data = await response.json();
             alert(data.message || data.error);
         }
-
-        async function login(event) {
-            event.preventDefault();
-            const email = document.getElementById("login-email").value;
-            const password = document.getElementById("login-password").value;
-
-            const response = await fetch("http://localhost:8080/api/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password })
-            });
-
-            const data = await response.json();
-            if (data.token) {
-                localStorage.setItem("token", data.token);
-                alert("Login successful!");
-            } else {
-                alert(data.error);
-            }
-        }
     </script>
 </head>
 <body>
-<h2>Signup</h2>
-<form onsubmit="signup(event)">
-    <input type="text" id="name" placeholder="Name" required><br>
-    <input type="email" id="email" placeholder="Email" required><br>
-    <input type="text" id="mobile" placeholder="Mobile" required><br>
-    <input type="password" id="password" placeholder="Password" required><br>
-    <button type="submit">Signup</button>
-</form>
+<h2>Book a Venue</h2>
+<form onsubmit="bookVenue(event)">
+    <label for="venue">Select Venue:</label>
+    <select id="venue">
+        <option value="VENUE_1_ID">Venue 1</option>
+        <option value="VENUE_2_ID">Venue 2</option>
+    </select>
+    <br>
 
-<h2>Login</h2>
-<form onsubmit="login(event)">
-    <input type="email" id="login-email" placeholder="Email" required><br>
-    <input type="password" id="login-password" placeholder="Password" required><br>
-    <button type="submit">Login</button>
+    <label for="date">Select Date:</label>
+    <input type="date" id="date" required>
+    <button type="button" onclick="fetchSlots()">Check Availability</button>
+    <br>
+
+    <label for="timeSlot">Select Time Slot:</label>
+    <select id="timeSlot"></select>
+    <br>
+
+    <button type="submit">Book Now</button>
 </form>
 </body>
 </html>

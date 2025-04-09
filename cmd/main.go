@@ -24,7 +24,8 @@ func main() {
 	r.POST("/api/signup", handlers.SignupHandler)
 	r.POST("/api/login", handlers.LoginHandler)
 	r.POST("/api/registervenue", handlers.VenueHandler)
-
+	r.GET("/api/availability/:venueID", handlers.GetAvailableSlots)
+	r.GET("/api/book")
 	log.Println("Server running on :8080")
 	r.Run(":8080")
 }
