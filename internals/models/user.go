@@ -1,8 +1,9 @@
 package models
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // User model
@@ -25,15 +26,16 @@ type Venue struct {
 	MapURL      string             `bson:"map_url"`
 	ManagerID   primitive.ObjectID `bson:"manager_id"`
 	Packages    []Package          `bson:"packages"`
+	ImageURL    []string           `bson:"packages"`
 }
 
 // Package model
 type Package struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty"`
-	Name       string             `bson:"name"`
-	Price      float64            `bson:"price"`
-	Decoration string             `bson:"decoration"`
-	MaxPeople  int                `bson:"max_people"`
+	ID            primitive.ObjectID `bson:"_id,omitempty"`
+	Name          string             `bson:"name"`
+	Price         float64            `bson:"price"`
+	Decoration    string             `bson:"decoration"`
+	Number_people int                `bson:"number_people"`
 }
 
 // Booking model

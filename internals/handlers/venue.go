@@ -56,3 +56,52 @@ func VenueHandler(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Venue registered successfully"})
 }
+
+func InsertNewPackageHandler(c *gin.Context) {
+	venueName := c.Param("venueName") // Get venue name from URL path
+	if venueName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Venue name is required in URL"})
+		return
+	}
+
+	var newPackage models.Package
+	if err := c.ShouldBindJSON(&newPackage); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package data"})
+		return
+	}
+
+	newPackage.ID = primitive.NewObjectID()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	collection := database.Client.Database("meeras").Collection("venues")
+
+	// Update the venue by pushing the new package
+	update := bson.M{
+		"$push": bson.M{"packages": newPackage},
+	}
+	filter := bson.M{"name": venueName}
+
+	result, err := collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update venue packages"})
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Venue not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Package added successfully to venue"})
+}
+
+// func GetAllVenuesHandler(c *gin.Context) {
+
+// 	collection := database.Client.Database("meeras").Collection("venues")
+
+// 	fmt.Println(collection.Name())
+
+// 	c.JSON(http.StatusOK, gin.H{"message": "Package added successfully to venue"})
+// }
