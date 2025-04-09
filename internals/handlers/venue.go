@@ -97,11 +97,90 @@ func InsertNewPackageHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Package added successfully to venue"})
 }
 
-// func GetAllVenuesHandler(c *gin.Context) {
+func GetAllVenuesHandler(c *gin.Context) {
+	// Get the MongoDB collection
+	collection := database.Client.Database("meeras").Collection("venues")
 
-// 	collection := database.Client.Database("meeras").Collection("venues")
+	// Create a context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-// 	fmt.Println(collection.Name())
+	// Query all documents from the collection
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch venues"})
+		return
+	}
+	defer cursor.Close(ctx)
 
-// 	c.JSON(http.StatusOK, gin.H{"message": "Package added successfully to venue"})
-// }
+	// Decode all documents into a slice
+	var venues []bson.M
+	if err := cursor.All(ctx, &venues); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse venues"})
+		return
+	}
+
+	// Return the data as JSON
+	c.JSON(http.StatusOK, gin.H{
+		"venues": venues,
+	})
+}
+
+func UpdatePackageHandler(c *gin.Context) {
+	// Extract path parameters
+	venueName := c.Param("venueName")
+	packageId := c.Param("packageId")
+
+	if venueName == "" || packageId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Venue name and package ID are required in URL"})
+		return
+	}
+
+	// Convert packageId string to ObjectID
+	objID, err := primitive.ObjectIDFromHex(packageId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID format"})
+		return
+	}
+
+	// Bind new package data from request body
+	var updatedPackage models.Package
+	if err := c.ShouldBindJSON(&updatedPackage); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package data"})
+		return
+	}
+
+	// Ensure updatedPackage has the correct ID
+	updatedPackage.ID = objID
+
+	collection := database.Client.Database("meeras").Collection("venues")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Find the specific venue and package
+	filter := bson.M{
+		"name":         venueName,
+		"packages._id": objID,
+	}
+
+	// Replace the matched package with updated data
+	update := bson.M{
+		"$set": bson.M{
+			"packages.$": updatedPackage,
+		},
+	}
+
+	result, err := collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update package"})
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Venue or package not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Package updated successfully"})
+}
