@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register Venue</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 30px; }
+        input, button { margin-top: 10px; display: block; }
+    </style>
+</head>
+<body>
+
+<h2>Upload Venue Cover Image</h2>
+<input type="file" id="imageInput" accept="image/*" />
+<button onclick="uploadImage()">Upload Image & Register Venue</button>
+
+<p id="status"></p>
+
+<script>
+    const BASE_URL = "http://localhost:8080";
+
+    async function uploadImage() {
+        const fileInput = document.getElementById('imageInput');
+        const file = fileInput.files[0];
+        if (!file) return alert("Please select an image");
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        document.getElementById("status").innerText = "Uploading image...";
+
+        try {
+            // Upload image
+            const uploadRes = await fetch(`${BASE_URL}/api/upload/image`, {
+                method: "POST",
+                body: formData,
+            });
+
+            const uploadData = await uploadRes.json();
+            if (!uploadRes.ok) throw new Error(uploadData.error || "Upload failed");
+
+            const imageUrl = uploadData.url;
+            console.log("Image URL:", imageUrl);
+
+            document.getElementById("status").innerText = "Image uploaded, registering venue...";
+
+            // Register venue
+            const venueData = {
+                name: "Dal Lake Shikara Venue",
+                location: "Srinagar, Kashmir",
+                rating: "4.7",
+                description: "A serene location for birthdays and gatherings with Shikara rides.",
+                map_url: "https://maps.google.com/?q=Dal+Lake+Srinagar",
+                image_url: imageUrl, // <- Include this in your backend schema if needed
+                packages: [
+                    {
+                        name: "Basic Shikara Ride",
+                        price: 1500,
+                        duration: "1 hour",
+                        details: "Includes a decorated shikara and snacks"
+                    },
+                    {
+                        name: "Premium Shikara Ride",
+                        price: 3000,
+                        duration: "2 hours",
+                        details: "Includes full decor, snacks, music, and photography"
+                    }
+                ]
+            };
+
+            const venueRes = await fetch(`${BASE_URL}/api/registervenue`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(venueData)
+            });
+
+            const venueResult = await venueRes.json();
+            if (!venueRes.ok) throw new Error(venueResult.error || "Venue registration failed");
+
+            document.getElementById("status").innerText = "✅ Venue registered successfully!";
+            console.log("Venue response:", venueResult);
+        } catch (err) {
+            document.getElementById("status").innerText = "❌ Error: " + err.message;
+            console.error(err);
+        }
+    }
+</script>
+
+</body>
+</html>
