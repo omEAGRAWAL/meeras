@@ -1,16 +1,12 @@
 package main
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"log"
 	"meeras/internals/database"
 	"meeras/internals/handlers"
-<<<<<<< HEAD
-=======
-
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
->>>>>>> cb83ed7bc4ad0eaff9135dc229944c8696d364e7
+	//>>>>>>> cb83ed7bc4ad0eaff9135dc229944c8696d364e7
 )
 
 func main() {
@@ -41,6 +37,6 @@ func main() {
 	log.Println("Server running on :8080")
 	err := r.Run(":8080")
 	if err != nil {
-		return 
+		return
 	}
 }

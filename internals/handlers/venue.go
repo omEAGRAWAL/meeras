@@ -113,16 +113,16 @@ func GetAllVenuesHandler(c *gin.Context) {
 	}
 	defer cursor.Close(ctx)
 
-<<<<<<< HEAD
-// 	c.JSON(http.StatusOK, gin.H{"message": "Package added successfully to venue"})
-// }
-
-//getvenueByname
-//create new package
-//edit package
-//make booking
-//update booking
-=======
+	//<<<<<<< HEAD
+	//// 	c.JSON(http.StatusOK, gin.H{"message": "Package added successfully to venue"})
+	//// }
+	//
+	////getvenueByname
+	////create new package
+	////edit package
+	////make booking
+	////update booking
+	//=======
 	// Decode all documents into a slice
 	var venues []bson.M
 	if err := cursor.All(ctx, &venues); err != nil {
@@ -194,4 +194,5 @@ func UpdatePackageHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Package updated successfully"})
 }
->>>>>>> cb83ed7bc4ad0eaff9135dc229944c8696d364e7
+
+//>>>>>>> cb83ed7bc4ad0eaff9135dc229944c8696d364e7
