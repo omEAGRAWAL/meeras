@@ -33,7 +33,7 @@ const Signup = () => {
     if (!validateForm()) return;
 
     try {
-      const response = await axios.post("http://localhost:8080/api/signup", formData, {
+      const response = await axios.post("http://localhost:8089/api/signup", formData, {
         headers: { "Content-Type": "application/json" },
       });
       setMessage(response.data.message);

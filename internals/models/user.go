@@ -26,7 +26,7 @@ type Venue struct {
 	MapURL      string             `bson:"map_url"`
 	ManagerID   primitive.ObjectID `bson:"manager_id"`
 	Packages    []Package          `bson:"packages"`
-	ImageURL    []string           `bson:"packages"`
+	ImageURL    []string           `bson:"images"`
 }
 
 // Package model
