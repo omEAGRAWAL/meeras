@@ -42,6 +42,8 @@ func main() {
 	r.GET("/api/updatepackage/:venueName/:packageId", handlers.UpdatePackageHandler)
 	r.DELETE("/api/deletepackage/:packageId", handlers.DeletePackageHandler)
 	r.GET("/api/getallpackages", handlers.GetAllPacakages)
+	r.POST("/api/updatevenue/:venueId", handlers.UpdateVenue)
+	r.DELETE("/api/deletevenue/:venueId", handlers.DeleteVenue)
 
 	log.Println("Server running on :8089")
 	r.Run(":8089")

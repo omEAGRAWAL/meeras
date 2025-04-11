@@ -297,3 +297,81 @@ func GetAllPacakages(c *gin.Context) {
 		"pacakages": pacakagesOnly,
 	})
 }
+
+func UpdateVenue(c *gin.Context) {
+	venueId := c.Param("venueId") // Ideally rename this to "venueId" for clarity
+	if venueId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Venue ID is required in URL"})
+		return
+	}
+
+	var updatedVenue models.Venue
+	if err := c.ShouldBindJSON(&updatedVenue); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid venue data"})
+		return
+	}
+
+	objID, err := primitive.ObjectIDFromHex(venueId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid venue ID format"})
+		return
+	}
+
+	// Set the ID in the body to match the one from URL to avoid ID mismatch issues
+	updatedVenue.ID = objID
+
+	collection := database.Client.Database("meeras").Collection("venues")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": objID}
+
+	// Replace the entire document
+	result, err := collection.ReplaceOne(ctx, filter, updatedVenue)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update venue"})
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Venue not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Venue updated successfully"})
+}
+func DeleteVenue(c *gin.Context) {
+	venueId := c.Param("venueId") // Ideally rename this to "venueId" for clarity
+	if venueId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Venue ID is required in URL"})
+		return
+	}
+
+	objID, err := primitive.ObjectIDFromHex(venueId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid venue ID format"})
+		return
+	}
+
+	// Set the ID in the body to match the one from URL to avoid ID mismatch issues
+
+	collection := database.Client.Database("meeras").Collection("venues")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": objID}
+
+	// Replace the entire document
+	result, err := collection.DeleteOne(ctx, filter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to Delete venue"})
+		return
+	}
+
+	if result.DeletedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Venue not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Venue deleted successfully"})
+}
