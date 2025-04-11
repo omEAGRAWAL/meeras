@@ -57,73 +57,142 @@ func VenueHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Venue registered successfully"})
 }
 
-func GetAvailableSlots(c *gin.Context) {
-	venueID := c.Param("venueID")
-	date := c.Query("date") // YYYY-MM-DD format
-
-	collection := database.Client.Database("meeras").Collection("bookings")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// Find existing bookings for the venue on the selected date
-	cursor, err := collection.Find(ctx, bson.M{"venue_id": venueID, "date": date})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check availability"})
+func InsertNewPackageHandler(c *gin.Context) {
+	venueName := c.Param("venueName") // Get venue name from URL path
+	if venueName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Venue name is required in URL"})
 		return
 	}
 
-	// Define time slots (Example: 3-hour slots)
-	allSlots := []string{"10:00 AM - 1:00 PM", "2:00 PM - 5:00 PM", "6:00 PM - 9:00 PM"}
-	bookedSlots := make(map[string]bool)
-
-	for cursor.Next(ctx) {
-		var booking models.Booking
-		cursor.Decode(&booking)
-		bookedSlots[booking.TimeSlot] = true
+	var newPackage models.Package
+	if err := c.ShouldBindJSON(&newPackage); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package data"})
+		return
 	}
 
-	// Filter available slots
-	availableSlots := []string{}
-	for _, slot := range allSlots {
-		if !bookedSlots[slot] {
-			availableSlots = append(availableSlots, slot)
-		}
+	newPackage.ID = primitive.NewObjectID()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	collection := database.Client.Database("meeras").Collection("venues")
+
+	// Update the venue by pushing the new package
+	update := bson.M{
+		"$push": bson.M{"packages": newPackage},
+	}
+	filter := bson.M{"name": venueName}
+
+	result, err := collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update venue packages"})
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"available_slots": availableSlots})
+	if result.MatchedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Venue not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Package added successfully to venue"})
 }
 
-// BookVenue - Allows users to book a venue
-func BookVenue(c *gin.Context) {
-	var booking models.Booking
-	if err := c.ShouldBindJSON(&booking); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid booking details"})
-		return
-	}
+func GetAllVenuesHandler(c *gin.Context) {
+	// Get the MongoDB collection
+	collection := database.Client.Database("meeras").Collection("venues")
 
-	// Ensure the slot is still available
-	collection := database.Client.Database("meeras").Collection("bookings")
+	// Create a context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	existing := collection.FindOne(ctx, bson.M{
-		"venue_id":  booking.VenueID,
-		"date":      booking.Date,
-		"time_slot": booking.TimeSlot,
+	// Query all documents from the collection
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch venues"})
+		return
+	}
+	defer cursor.Close(ctx)
+
+	//<<<<<<< HEAD
+	//// 	c.JSON(http.StatusOK, gin.H{"message": "Package added successfully to venue"})
+	//// }
+	//
+	////getvenueByname
+	////create new package
+	////edit package
+	////make booking
+	////update booking
+	//=======
+	// Decode all documents into a slice
+	var venues []bson.M
+	if err := cursor.All(ctx, &venues); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse venues"})
+		return
+	}
+
+	// Return the data as JSON
+	c.JSON(http.StatusOK, gin.H{
+		"venues": venues,
 	})
-	if existing.Err() == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Time slot already booked"})
-		return
-	}
-
-	// Insert booking
-	booking.ID = primitive.NewObjectID()
-	booking.Status = "Confirmed"
-	_, err := collection.InsertOne(ctx, booking)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to book venue"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"message": "Booking successful!"})
 }
+
+func UpdatePackageHandler(c *gin.Context) {
+	// Extract path parameters
+	venueName := c.Param("venueName")
+	packageId := c.Param("packageId")
+
+	if venueName == "" || packageId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Venue name and package ID are required in URL"})
+		return
+	}
+
+	// Convert packageId string to ObjectID
+	objID, err := primitive.ObjectIDFromHex(packageId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID format"})
+		return
+	}
+
+	// Bind new package data from request body
+	var updatedPackage models.Package
+	if err := c.ShouldBindJSON(&updatedPackage); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package data"})
+		return
+	}
+
+	// Ensure updatedPackage has the correct ID
+	updatedPackage.ID = objID
+
+	collection := database.Client.Database("meeras").Collection("venues")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Find the specific venue and package
+	filter := bson.M{
+		"name":         venueName,
+		"packages._id": objID,
+	}
+
+	// Replace the matched package with updated data
+	update := bson.M{
+		"$set": bson.M{
+			"packages.$": updatedPackage,
+		},
+	}
+
+	result, err := collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update package"})
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Venue or package not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Package updated successfully"})
+}
+
+//>>>>>>> cb83ed7bc4ad0eaff9135dc229944c8696d364e7
