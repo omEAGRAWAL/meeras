@@ -40,13 +40,14 @@ type Package struct {
 
 // Booking model
 type Booking struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty"`
-	UserID    primitive.ObjectID `bson:"user_id"`
-	VenueID   primitive.ObjectID `bson:"venue_id"`
-	PackageID primitive.ObjectID `bson:"package_id"`
-	Date      time.Time          `bson:"date"`
-	TimeSlot  string             `bson:"time_slot"`
-	Status    string             `bson:"status"`
+	ID          primitive.ObjectID `bson:"_id,omitempty"`
+	UserID      primitive.ObjectID `bson:"user_id"`
+	VenueID     primitive.ObjectID `bson:"venue_id"`
+	PackageID   primitive.ObjectID `bson:"package_id"`
+	Date        time.Time          `bson:"date"`
+	TimeSlot    string             `bson:"time_slot"`
+	Status      string             `bson:"status"`
+	PersonCount int                `bson:"person_count"`
 }
 
 // Role model

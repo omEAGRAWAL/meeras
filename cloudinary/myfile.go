@@ -32,6 +32,13 @@ func UploadHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Image not provided"})
 		return
 	}
+	email, ok := c.Get("email")
+
+	if !ok {
+		log.Println(ok)
+	} else {
+		log.Println(email)
+	}
 
 	// Open file stream
 	src, err := file.Open()
